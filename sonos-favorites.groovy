@@ -64,15 +64,14 @@ def mainPage(){
 }
 
 def configPage(){
-	initialize()
 	refresh()
     dynamicPage(name: "configPage", title: "Configure/Edit Presets:") {
-		section("Something"){input("numPresets", "number", title: getFormat("section", "How many presets?:"), submitOnChange: true, range: "1..25")}
+		section(""){input("numPresets", "number", title: getFormat("section", "How many presets?:"), submitOnChange: true, range: "1..25")}
 			if(numPresets){
 				for(i in 1..numPresets){
 					section(getFormat("header", "Preset ${i}")){
 						input("speaker${i}", "enum", title: getFormat("section", "Speaker:"), options: state.speakers)
-						input("preset${i}", "enum", title: getFormat("section", "Preset:"), options: state.presets)
+						input("preset${i}", "enum", title: getFormat("section", "Preset:"), options: state.presets, submitOnChange: true)
 					}
 				}
 			}
@@ -85,6 +84,7 @@ def installed() {
 
 def updated() {
 	initialize()
+	updateDevices()
 }
 
 def initialize() {
@@ -97,6 +97,22 @@ def uninstalled() {
 	children.each {
 		deleteChildDevice(it.deviceNetworkId)
 	}
+}
+
+def updateDevices() {
+	for(i in 1..numPresets) {
+		def label = state.speakers[settings."speaker${i}"]?.replaceAll(/(?i) (sonos|speaker)/,'')+" Fave ${i}"
+		log.info("${label} Sonos favorite switch being updated/created")
+		createChildDevice(label, i)
+	}
+}
+
+def getUDN(sonos) {
+	return sonos.getDataValue('subscriptionId')?.replaceAll(/(uuid:|_[^_]+$)/,'')
+}
+
+def isRadio(uri) {
+	return uri ==~ /(x\-sonosapi\-stream|x\-sonosapi\-radio|pndrradio|x\-sonosapi\-hls|hls\-radio|m3u8|x\-sonosprog\-http)/
 }
 
 def updateSpeakers() {
@@ -251,21 +267,24 @@ def fixXML(didl) {
   return didl
 }
 
-def parseResponse(resp, var) {
+def parseResponse(cmd, resp, var) {
 	def xml = resp.data.text
 	def envelope = new XmlSlurper().parseText(xml)
-	def didl = new XmlSlurper().parseText(envelope.children()[0].children()[0].children()[0].text())
-	state[var] = [:] 
-	didl.children().each() {
-		def id = (it.@id as String).replace('FV:2/','')
-		state[var][id] = [title: it.title as String, res: it.res as String, id: it.@id as String, meta: it.resMD as String, desc: it.description as String]
+
+	if('Browse' == cmd) {
+		def didl = new XmlSlurper().parseText(envelope.children()[0].children()[0].children()[0].text())
+		state[var] = [:] 
+		didl.children().each() {
+			def id = (it.@id as String).replace('FV:2/','')
+			state[var][id] = [title: it.title as String, uri: it.res as String, id: it.@id as String, meta: it.resMD as String, desc: it.description as String]
+		}
+		updatePresets()
 	}
-	updatePresets()
 	envelope = null
 	didl = null
 }
 
-def sonosRequest(sonos, cmd, values, var) {
+def sonosRequest(sonos, cmd, values=null, var=null) {
 	def ip = convertHexToIP(sonos.getDeviceNetworkId())
 	def meta = getCommand(cmd)
 	def params = meta['commands'][cmd]['params']
@@ -273,7 +292,7 @@ def sonosRequest(sonos, cmd, values, var) {
 
 	params.each {k,v ->
 		paramXml = paramXml + sprintf("<%s>%s</%s>", k, 
-		groovy.xml.XmlUtil.escapeXml((values.containsKey(k) ? values[k] : params[k]) as String), k)
+		groovy.xml.XmlUtil.escapeXml((values?.containsKey(k) ? values[k] : params[k]) as String), k)
 	}
 
 	def req = sprintf("""<?xml version="1.0" encoding="utf-8"?>
@@ -293,11 +312,11 @@ def sonosRequest(sonos, cmd, values, var) {
 	def url = 'http://'+ip+':1400'+meta['control']
 	debug("${url} -> ${headers} -> ${req}")
 
-	httpPost([uri: url, headers: headers, body: req, contentType: 'text/xml; charset="utf-8"', textParser: true], { data -> parseResponse(data, var) } )
+	httpPost([uri: url, headers: headers, body: req, contentType: 'text/xml; charset="utf-8"', textParser: true], { parseResponse(cmd, it, var) } )
 }
 
-private createChildDevice(label, id, favorite) {
-	def deviceId = makeChildDeviceId(id, favorite)
+private createChildDevice(label, id) {
+	def deviceId = makeChildDeviceId(id)
 	def createdDevice = getChildDevice(deviceId)
 
 	if(!createdDevice) {
@@ -307,7 +326,7 @@ private createChildDevice(label, id, favorite) {
 			addChildDevice("hubitat", component, deviceId, [label : "${label}", isComponent: false, name: "${label}"])
 			createdDevice = getChildDevice(deviceId)
 			def created = createdDevice ? "created" : "failed creation"
-			log.info("Sonos Favorite Switch: ${type} id: ${deviceId} label: ${label} ${created}", "createChildDevice()")
+			log.info("Sonos Favorite Switch: id: ${deviceId} label: ${label} ${created}")
 		} catch (e) {
 			logError("Failed to add child device with error: ${e}", "createChildDevice()")
 		}
@@ -320,6 +339,42 @@ private createChildDevice(label, id, favorite) {
 	return createdDevice
 }
 
+def addURItoQueue(sonos, uri, meta="") {
+	debug("adding ${uri} to queue")
+	sonosRequest(sonos, 'AddURIToQueue', [EnqueuedURI : uri, EnqueuedURIMetaData: meta, DesiredFirstTrackNumberEnqueued: 1])
+}
+
+def setURI(sonos, uri, meta="") {
+	debug("setting current uri to ${uri}")
+	sonosRequest(sonos, 'SetAVTransportURI', [CurrentURI : uri, CurrentURIMetaData: meta])
+}
+
+def play(sonos, uri, meta="") {
+	if(!isRadio(uri)) {
+		addURItoQueue(sonos, uri, meta)
+		def udn = getUDN(sonos)
+		uri = "x-rincon-queue:${udn}#0"
+		meta = ""
+	} 
+	setURI(sonos, uri, meta)
+	pauseExecution(3000)
+	sonosRequest(sonos, 'Play')
+}
+
+def stop(sonos) {
+	sonosRequest(sonos, 'Stop')
+}
+
+def getSonosById(id) {
+	debug("finding sonos for ${id}...")
+	def result = null
+	sonoses?.each() {
+		if(it.getDeviceNetworkId() == id) result = it
+	}
+	debug(result)
+	return result
+}
+
 void componentRefresh(cd) {
     debug("received refresh request from ${cd.displayName}")
     refresh()
@@ -328,31 +383,26 @@ void componentRefresh(cd) {
 def componentOn(cd) {
     debug("received on request from DN = ${cd.name}, DNI = ${cd.deviceNetworkId}")
 	def idparts = cd.deviceNetworkId.split("-")
-    def favorite = idparts[-1].replaceAll('_',':').replaceAll('.','/')
-	def id = idparts[-2]
+	def num = idparts[-1]
+	debug("preset num is ${num}")
+	def sonos = getSonosById(settings."speaker${num}")
+	if(sonos) {
+		def fave = state.favorites[settings."preset${num}"]
+		if(fave) play(sonos, fave.uri, fave.meta)
+	}
 }
 
 def componentOff(cd) {
     debug("received off request from DN = ${cd.name}, DNI = ${cd.deviceNetworkId}")
 	def idparts = cd.deviceNetworkId.split("-")
-    def favorite = idparts[-1].replaceAll('_',':').replaceAll('.','/')
-	def id = idparts[-2]
+	def num = idparts[-1]
+	def sonos = getSonosById(settings."speaker${num}")
+	if(sonos) stop(sonos)
 }
 
-def getCommunicationDevice() {
-	def id = getCommunicationDeviceId()
-	def cd = getChildDevice(id)
-	def name = "Sonos Favorites Interface"
-
-	if(!cd) {
-		cd = addChildDevice("schwark", name, id, [label : "${name}", isComponent: false, name: "${name}"])
-	}
-	return cd
-}
-
-def makeChildDeviceId(id, favorite) {
+def makeChildDeviceId(id) {
 	def hubid = 'SONOSFAVORITES'
-	return "${hubid}-${id}-${favorite.replaceAll(':', '_').replaceAll('/','.')}"
+	return "${hubid}-${id}"
 }
 
 private debug(logMessage, fromMethod="") {

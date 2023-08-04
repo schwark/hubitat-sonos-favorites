@@ -1,0 +1,14 @@
+{
+  "author": "Schwark Satyavolu",
+  "apps": [
+    {
+      "id": "ec017c0e-f784-46d0-ae36-ec387de3bb9c",
+      "name": "${appName()}",
+      "namespace": "schwark",
+      "location": "https://raw.githubusercontent.com/schwark/hubitat-sonos-favorites/main/sonos-favorites.groovy",
+      "required": true,
+      "oauth": false,
+      "primary": false
+    }
+  ]
+}

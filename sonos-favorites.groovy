@@ -23,15 +23,6 @@ definition(
 	importUrl: "https://raw.githubusercontent.com/schwark/hubitat-sonos-favorites/main/sonos-favorites.groovy"
 )
 
-/*
-metadata {
-    definition (name: "Sonos Favorites Support", namespace: "schwark", author: "Schwark Satyavolu") {
-        capability "Initialize"
-        capability "Refresh"
-    }
-}
-*/
-
 preferences {
 	page(name: "mainPage")
 	page(name: "configPage")
@@ -138,21 +129,6 @@ def getFavorites() {
 	sonosRequest(sonoses[0], 'Browse', [ObjectID: 'FV:2'], 'favorites')
 }
 
-private sonosAction(String dni, String action, String service, String path, Map body = [InstanceID:0, Speed:1]) {
-	debug("sonosAction($dni, $action, $service, $path, $body)")
-	def ip = convertHexToIP(dni)
-	def soap = new hubitat.device.HubSoapAction(
-		path:    path ?: "/MediaRenderer/$service/Control",
-		urn:     "urn:schemas-upnp-org:service:$service:1",
-		action:  action,
-		body:    body,
-		headers: [Host: "${ip}:1400", CONNECTION: "close"],
-		destinationAddress: ip,
-		destinationPort: 1400
-	)
-	sendHubCommand(soap)
-}
-
 def getCommand(cmd) {
 	def commands = [
 		ContentDirectory : [
@@ -252,18 +228,6 @@ def fixXML(didl) {
         it[0] + groovy.xml.XmlUtil.escapeXml(xml) + it[2] 
     } 
   }
-  /*
-  if didl:match('<DIDL%-Lite xmlns%:dc%=&quot;') then
-      log.warn("messed up xml - fixing &quot;")
-      didl = didl:gsub('&quot;','"')
-      fixed = true
-  end
-  if didl:match('<[^>]+&gt;') then
-      log.warn("messed up xml - fixing tag&gt;")
-      didl = didl:gsub('<([^>]+)&gt;','<%1>')
-      fixed = true
-  end
-  */
   return didl
 }
 

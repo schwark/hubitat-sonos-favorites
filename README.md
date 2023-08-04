@@ -10,6 +10,8 @@ To use, go to your Hubitat hub, Go to Developer tools / Apps Code / Add New App 
 
 https://raw.githubusercontent.com/schwark/hubitat-sonos-favorites/main/sonos-favorites.groovy
 
+Go to Apps / Add User App / Sonos Favorites Support
+
 Pick the speakers you want to use with this app
 
 Then click on Presets

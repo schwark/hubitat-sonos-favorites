@@ -20,7 +20,7 @@ This will now allow you to pick the number of preset switches you want to create
 
 Then for each preset, pick which speaker and which favorites from your Sonos favorites - if the station or media you want to play is not in Sonos Favorites, add it to your Sonos favorites.
 
-A switch named "<Sonos Speaker Name> Fave <Preset Num>" will be created. Turning it on will play the selected favorite, and turning off will stop the music.
+A switch named ```<Sonos Speaker Name> Fave <Preset Num>``` will be created. Turning it on will play the selected favorite, and turning off will stop the music.
 
 
 

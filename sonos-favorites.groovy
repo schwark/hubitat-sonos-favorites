@@ -321,7 +321,7 @@ def play(sonos, uri, meta="") {
 		meta = ""
 	} 
 	setURI(sonos, uri, meta)
-	pauseExecution(3000)
+	pauseExecution(1000)
 	sonosRequest(sonos, 'Play')
 }
 

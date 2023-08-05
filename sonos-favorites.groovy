@@ -352,7 +352,10 @@ def componentOn(cd) {
 	def sonos = getSonosById(settings."speaker${num}")
 	if(sonos) {
 		def fave = state.favorites[settings."preset${num}"]
-		if(fave) play(sonos, fave.uri, fave.meta)
+		if(fave) {
+			play(sonos, fave.uri, fave.meta)
+			cd.sendEvent(name: 'switch', value: 'on')
+		}
 	}
 }
 
@@ -361,7 +364,10 @@ def componentOff(cd) {
 	def idparts = cd.deviceNetworkId.split("-")
 	def num = idparts[-1]
 	def sonos = getSonosById(settings."speaker${num}")
-	if(sonos) stop(sonos)
+	if(sonos) {
+		stop(sonos)
+		cd.sendEvent(name: 'switch', value: 'off')
+	}
 }
 
 def makeChildDeviceId(id) {

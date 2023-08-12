@@ -1,5 +1,8 @@
 # Sonos Favorites Support for Hubitat
 
+# How to install
+The easiest way to install and keep up to date is to use [Hubitat Package Manager](https://hubitatpackagemanager.hubitatcommunity.com/installing.html). Search for Sonos Favorites to install - otherwise follow manual process below
+
 This is an integration for Hubitat hubs to enable playing of Sonos favorites via a Switch for automation purposes. This app only lets you play from favorites, but allows you to play radio stations, playlists from Apple Music or Spotify etc. 
 
 The built-in integration only works if you have the URI of the song you want to play, but does not work with URIs of playlists for example. Hence the need for this add-in - just add a song to your Sonos favorites in the Sonos app, and you can play that song/station/playlist anytime via a switch. 

@@ -1,9 +1,15 @@
 {
+  "packageName": "Sonos Favorites Support",
+	"minimumHEVersion": "2.2.1",
   "author": "Schwark Satyavolu",
+	"version": "1.0.0",
+	"releaseNotes": "",
+	"documentationLink": "https://github.com/schwark/hubitat-sonos-favorites",
+	"communityLink": "https://community.hubitat.com/t/release-sonos-favorites-support/122472",
   "apps": [
     {
       "id": "ec017c0e-f784-46d0-ae36-ec387de3bb9c",
-      "name": "${appName()}",
+      "name": "Sonos Favorites Support",
       "namespace": "schwark",
       "location": "https://raw.githubusercontent.com/schwark/hubitat-sonos-favorites/main/sonos-favorites.groovy",
       "required": true,

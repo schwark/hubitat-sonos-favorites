@@ -4,11 +4,11 @@
  *
  */
 
- def version() {"0.1.1"}
+def version() {"1.0.0"}
 
 import hubitat.helper.InterfaceUtils
 
-def appVersion() { return "4.0" }
+def appVersion() { return version() }
 def appName() { return "Sonos Favorites Support" }
 
 definition(

@@ -4,7 +4,7 @@
  *
  */
 
-def version() {"1.0.0"}
+def version() {"1.0.1"}
 
 import hubitat.helper.InterfaceUtils
 
@@ -107,7 +107,7 @@ def isRadio(uri) {
 }
 
 def updateSpeakers() {
-    state.speakers = state.speakers ?: [:]
+    state.speakers = [:]
     sonoses?.each()  {
         state.speakers[it.getDeviceNetworkId()] = it.getLabel()
     }

@@ -2,7 +2,7 @@
   "packageName": "Sonos Favorites Support",
 	"minimumHEVersion": "2.2.1",
   "author": "Schwark Satyavolu",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"releaseNotes": "",
 	"documentationLink": "https://github.com/schwark/hubitat-sonos-favorites",
 	"communityLink": "https://community.hubitat.com/t/release-sonos-favorites-support/122472",

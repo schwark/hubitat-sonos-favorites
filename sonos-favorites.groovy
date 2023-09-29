@@ -4,7 +4,7 @@
  *
  */
 
-def version() {"1.0.1"}
+def version() {"1.0.2"}
 
 import hubitat.helper.InterfaceUtils
 
@@ -276,7 +276,11 @@ def sonosRequest(sonos, cmd, values=null, var=null) {
     def url = 'http://'+ip+':1400'+meta['control']
     debug("${url} -> ${headers} -> ${req}")
 
-    httpPost([uri: url, headers: headers, body: req, contentType: 'text/xml; charset="utf-8"', textParser: true], { parseResponse(cmd, it, var) } )
+    try {
+        httpPost([uri: url, headers: headers, body: req, contentType: 'text/xml; charset="utf-8"', textParser: true], { parseResponse(cmd, it, var) } )
+    } catch (groovyx.net.http.HttpResponseException e) {
+        logError('sonosRequest', "${e.statusCode}: ${e.response.data}")
+    }      
 }
 
 private createChildDevice(label, id) {

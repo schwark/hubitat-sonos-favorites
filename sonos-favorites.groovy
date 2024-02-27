@@ -4,7 +4,7 @@
  *
  */
 
-def version() {"1.0.2"}
+def version() {"1.0.3"}
 
 import hubitat.helper.InterfaceUtils
 
@@ -63,6 +63,7 @@ def configPage(){
                     section(getFormat("header", "Preset ${i}")){
                         input("speaker${i}", "enum", title: getFormat("section", "Speaker:"), options: state.speakers)
                         input("preset${i}", "enum", title: getFormat("section", "Preset:"), options: state.presets, submitOnChange: true)
+                        input("volume${i}", "number", title: getFormat("section", "Volume:"), range: "0..100", submitOnChange: true)
                     }
                 }
             }
@@ -323,6 +324,11 @@ def setURI(sonos, uri, meta="") {
     sonosRequest(sonos, 'SetAVTransportURI', [CurrentURI : uri, CurrentURIMetaData: meta])
 }
 
+def setVolume(sonos, volume) {
+    debug("setting current volume to ${volume}")
+    sonosRequest(sonos, 'SetVolume', [DesiredVolume : volume])
+}
+
 def play(sonos, uri, meta="") {
     if(!isRadio(uri)) {
         addURItoQueue(sonos, uri, meta)
@@ -361,6 +367,11 @@ def componentOn(cd) {
     debug("preset num is ${num}")
     def sonos = getSonosById(settings."speaker${num}")
     if(sonos) {
+        def volume = state.favorites[settings."volume${num}"] ?: 3
+        if(volume) {
+            setVolume(sonos, volume)
+            pauseExecution(2000)
+        }
         def fave = state.favorites[settings."preset${num}"]
         if(fave) {
             play(sonos, fave.uri, fave.meta)

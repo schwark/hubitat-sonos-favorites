@@ -367,7 +367,7 @@ def componentOn(cd) {
     debug("preset num is ${num}")
     def sonos = getSonosById(settings."speaker${num}")
     if(sonos) {
-        def volume = state.favorites[settings."volume${num}"] ?: 3
+        def volume = settings."volume${num}" ?: 3
         if(volume) {
             setVolume(sonos, volume)
             pauseExecution(2000)
